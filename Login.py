@@ -6,48 +6,42 @@ import pwden
 
 def GetLoginUrl():  # 获取登陆链接
     apis = {}
-    schools = requests.get('https://www.cpdaily.com/v6/config/guest/tenant/list').json()['data']
+    ids = 'ec061503-d0fa-4bbd-9a22-e5eaaccc69e9'
+    params = {'ids': ids}
+    r = requests.get('https://mobile.campushoy.com/v6/config/guest/tenant/info', params=params)
 
-    for one in schools:
-        if one['name'] == '海南大学':
-            ids = one['id']
-            params = {'ids': ids}
-            r = requests.get('https://www.cpdaily.com/v6/config/guest/tenant/info', params=params)
+    old_acw_tc = requests.utils.dict_from_cookiejar(r.cookies)['acw_tc']
+    apis['old_acw_tc'] = old_acw_tc
+    data = r.json()['data'][0]
+    appid = data['appId']
+    ampUrl = data['ampUrl']
 
-            old_acw_tc = requests.utils.dict_from_cookiejar(r.cookies)['acw_tc']
-            apis['old_acw_tc'] = old_acw_tc
-            data = r.json()['data'][0]
-            appid = data['appId']
-            ampUrl = data['ampUrl']
+    if 'campusphere' in ampUrl or 'cpdaily' in ampUrl:
+        parse = urlparse(ampUrl)
+        apis['host'] = parse.netloc
+        res = requests.get(parse.scheme + '://' + parse.netloc, allow_redirects=False)
+        acw_tc = requests.utils.dict_from_cookiejar(res.cookies)['acw_tc']
+        apis['acw_tc'] = acw_tc
 
-            if 'campusphere' in ampUrl or 'cpdaily' in ampUrl:
-                parse = urlparse(ampUrl)
-                apis['host'] = parse.netloc
-                res = requests.get(parse.scheme + '://' + parse.netloc, allow_redirects=False)
-                acw_tc = requests.utils.dict_from_cookiejar(res.cookies)['acw_tc']
-                apis['acw_tc'] = acw_tc
+        header = {'Cookie': 'acw_tc=' + acw_tc}
+        apis['acw_url'] = parse.scheme + '://' + parse.netloc + '/portal/login'
+        res = requests.get(apis['acw_url'], headers=header)
+        apis['login-url'] = res.url
+        apis['data'] = {'appid': appid, 'login_type': 'mobileLogin'}
 
-                header = {'Cookie': 'acw_tc=' + acw_tc}
-                apis['acw_url'] = parse.scheme + '://' + parse.netloc + '/portal/login'
-                res = requests.get(apis['acw_url'], headers=header)
-                apis['login-url'] = res.url
-                apis['data'] = {'appid': appid, 'login_type': 'mobileLogin'}
+    ampUrl2 = data['ampUrl2']
+    if 'campusphere' in ampUrl2 or 'cpdaily' in ampUrl2:
+        parse = urlparse(ampUrl2)
+        apis['host'] = parse.netloc
+        res = requests.get(parse.scheme + '://' + parse.netloc, allow_redirects=False)
+        acw_tc = requests.utils.dict_from_cookiejar(res.cookies)['acw_tc']
+        apis['acw_tc'] = acw_tc
 
-            ampUrl2 = data['ampUrl2']
-            if 'campusphere' in ampUrl2 or 'cpdaily' in ampUrl2:
-                parse = urlparse(ampUrl2)
-                apis['host'] = parse.netloc
-                res = requests.get(parse.scheme + '://' + parse.netloc, allow_redirects=False)
-                acw_tc = requests.utils.dict_from_cookiejar(res.cookies)['acw_tc']
-                apis['acw_tc'] = acw_tc
-
-                header = {'Cookie': 'acw_tc=' + acw_tc}
-                apis['acw_url'] = parse.scheme + '://' + parse.netloc + '/portal/login'
-                res = requests.get(apis['acw_url'], headers=header)
-                apis['login-url'] = res.url
-                apis['data'] = {'appid': appid, 'login_type': 'mobileLogin'}
-            break
-
+        header = {'Cookie': 'acw_tc=' + acw_tc}
+        apis['acw_url'] = parse.scheme + '://' + parse.netloc + '/portal/login'
+        res = requests.get(apis['acw_url'], headers=header)
+        apis['login-url'] = res.url
+        apis['data'] = {'appid': appid, 'login_type': 'mobileLogin'}
     return apis
 
 
